@@ -119,9 +119,8 @@ public class SignsFeature extends RegionFeature {
 		// Check if still attached to a block
 		final org.bukkit.material.MaterialData d = b.getState().getData();
 		if(d instanceof Sign) {
-			Sign s = (Sign) d;
-			Block attachedBlock = b.getRelative(s.getAttachedFace());
-			if (attachedBlock.getType() != Material.AIR) {
+			BlockFace s = ((Sign) d).getAttachedFace();
+			if (s == null || b.getRelative(s).getType() != Material.AIR) {
 				return;
 			}
 		} else {
