@@ -91,20 +91,7 @@ public class AddsignCommand extends CommandAreaShop {
 			plugin.message(sender, "addsign-alreadyRegistered", regionSign.getRegion());
 			return;
 		}
-
-		BlockFace facing = null;
-		if(block.getState().getData() instanceof org.bukkit.material.Sign) {
-			facing = ((org.bukkit.material.Sign) block.getState().getData()).getFacing();
-		} else {
-			// 1.14 method
-			org.bukkit.block.data.BlockData bs = block.getState().getBlockData();
-			if(bs instanceof org.bukkit.block.data.type.WallSign) {
-				facing = ((org.bukkit.block.data.type.WallSign) bs).getFacing();
-			} else if(bs instanceof org.bukkit.block.data.type.Sign) {
-				facing = ((org.bukkit.block.data.type.Sign) bs).getRotation();
-			}
-		}
-		region.getSignsFeature().addSign(block.getLocation(), block.getType(), facing, profile);
+		region.getSignsFeature().addSign(block.getLocation(), block.getType(), plugin.getBukkitHandler().getSignFacing(block), profile);
 		if(profile == null) {
 			plugin.message(sender, "addsign-success", region);
 		} else {

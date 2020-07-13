@@ -511,7 +511,7 @@ public class FileManager extends Manager {
 	}
 
 	/**
-	 * Update a list of regions
+	 * Update a list of regions.
 	 * @param regions The list of regions to update.
 	 */
 	public void updateRegions(List<GeneralRegion> regions) {

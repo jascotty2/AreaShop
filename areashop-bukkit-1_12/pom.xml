@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>areashop-worldedit-7_beta_1</artifactId>
+    <artifactId>areashop-bukkit-1_12</artifactId>
     <packaging>jar</packaging>
-    <name>AreaShop WorldEdit 7_beta_1</name>
+    <name>AreaShop Bukkit 1.7.9 until 1.12</name>
     <version>latest</version>
 
     <parent>
@@ -16,25 +16,11 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>craftbukkit</artifactId>
-            <version>1.13-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <scope>system</scope>
+            <version>any</version>
+            <systemPath>${project.basedir}/../dependencies/craftbukkit-1.7.9-R0.2-SNAPSHOT.jar</systemPath>
             <type>jar</type>
             <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sk89q</groupId>
-            <artifactId>worldedit</artifactId>
-            <scope>system</scope>
-            <version>any</version>
-            <systemPath>${project.basedir}/../dependencies/worldedit-bukkit-7.0.0-beta-01.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>com.sk89q</groupId>
-            <artifactId>worldguard</artifactId>
-            <scope>system</scope>
-            <version>any</version>
-            <systemPath>${project.basedir}/../dependencies/worldguard-legacy-7.0.0-beta-01.jar</systemPath>
         </dependency>
 
         <dependency>

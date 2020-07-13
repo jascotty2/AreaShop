@@ -85,7 +85,7 @@ public class RegionSign {
 	}
 
 	/**
-	 * Get the facing of the sign.
+	 * Get the facing of the sign as saved in the config.
 	 * @return BlockFace the sign faces, or null if unknown
 	 */
 	public BlockFace getFacing() {
@@ -97,17 +97,13 @@ public class RegionSign {
 	}
 
 	/**
-	 * Get the material of the sign
-	 * @return Material of the sign, normally {@link Material#WALL_SIGN} or {@link Material#SIGN_POST}, but could be something else or null.
+	 * Get the material of the sign as saved in the config.
+	 * @return Material of the sign, usually {@link Material#WALL_SIGN}, {@link Material#SIGN}, or one of the other wood types (different result for 1.13-), Material.AIR if none.
 	 */
 	public Material getMaterial() {
 		String name = getRegion().getConfig().getString("general.signs." + key + ".signType");
-		if (name.contains("WALL_SIGN")) {
-			return Materials.wallSign;
-		} else if (name.contains("SIGN")) {
-			return Materials.floorSign;
-		}
-		return Material.AIR;
+		Material result = Materials.signNameToMaterial(name);
+		return result == null ? Material.AIR : result;
 	}
 
 	/**
@@ -150,62 +146,35 @@ public class RegionSign {
 		}
 
 		// Place the sign back (with proper rotation and type) after it has been hidden or (indirectly) destroyed
-		Sign signState = null;
 		if(!Materials.isSign(block.getType())) {
 			Material signType = getMaterial();
-			block.setType(signType == null ? Material.AIR : signType, false);
-			BlockState state = block.getState();
-			if(!(state instanceof Sign)) {
-				AreaShop.error("Setting sign", key, "of region", getRegion().getName(), "failed, could not set sign block back");
+			// Don't do physics here, we first need to update the direction
+			block.setType(signType, false);
+
+			// This triggers a physics update, which pops the sign if not attached properly
+			if (!AreaShop.getInstance().getBukkitHandler().setSignFacing(block, getFacing())) {
+				AreaShop.warn("Failed to update the facing direction of the sign at", getStringLocation(), "to ", getFacing(), ", region:", getRegion().getName());
+			}
+            
+			// Check if the sign has popped
+			if(!Materials.isSign(block.getType())) {
+				AreaShop.warn("Setting sign", key, "of region", getRegion().getName(), "failed, could not set sign block back");
 				return false;
 			}
-			signState = (Sign) state;
-			BlockFace signFace = getFacing();
-			if(signState.getData() instanceof org.bukkit.material.Sign) {
-				org.bukkit.material.Sign signData = (org.bukkit.material.Sign) signState.getData();
-				if(signFace != null) {
-					signData.setFacingDirection(signFace);
-					signState.setData(signData);
-				}
-			} else {
-				// 1.14 method
-				block.setType(signType);
-				final org.bukkit.block.data.BlockData bs = block.getState().getBlockData();
-				if(bs instanceof org.bukkit.block.data.type.WallSign) {
-					((org.bukkit.block.data.type.WallSign) bs).setFacing(signFace);
-				} else if(bs instanceof org.bukkit.block.data.type.Sign) {
-					((org.bukkit.block.data.type.Sign) bs).setRotation(signFace);
-				}
-				block.setBlockData(bs);
-				signState = (Sign) block.getState();
-			}
-		}
-		if(signState == null) {
-			signState = (Sign) block.getState();
 		}
 
+		// Save current rotation and type
 		if(!regionConfig.isString("general.signs." + key + ".signType")) {
 			getRegion().setSetting("general.signs." + key + ".signType", block.getType().name());
 		}
 		if(!regionConfig.isString("general.signs." + key + ".facing")) {
-			// Save current rotation and type
-			BlockFace facing = null;
-			if(signState.getData() instanceof org.bukkit.material.Sign) {
-				facing = ((org.bukkit.material.Sign) block.getState().getData()).getFacing();
-			} else {
-				// 1.14 method
-				org.bukkit.block.data.BlockData bs = signState.getBlockData();
-				if(bs instanceof org.bukkit.block.data.type.WallSign) {
-					facing = ((org.bukkit.block.data.type.WallSign) bs).getFacing();
-				} else if(bs instanceof org.bukkit.block.data.type.Sign) {
-					facing = ((org.bukkit.block.data.type.Sign) bs).getRotation();
-				}
-			}
-			getRegion().setSetting("general.signs." + key + ".facing", facing == null ? "null" : facing.toString());
+			BlockFace signFacing = AreaShop.getInstance().getBukkitHandler().getSignFacing(block);
+			getRegion().setSetting("general.signs." + key + ".facing", signFacing == null ? null : signFacing.toString());
 		}
 
 		// Apply replacements and color and then set it on the sign
-		for(int i = 0; i < signLines.length; ++i) {
+		Sign signState = (Sign) block.getState();
+		for(int i = 0; i < signLines.length; i++) {
 			if(signLines[i] == null) {
 				signState.setLine(i, "");
 				continue;
@@ -227,7 +196,12 @@ public class RegionSign {
 		if(signConfig == null || !signConfig.isSet(getRegion().getState().getValue().toLowerCase())) {
 			return false;
 		}
+
 		ConfigurationSection stateConfig = signConfig.getConfigurationSection(getRegion().getState().getValue().toLowerCase());
+		if(stateConfig == null) {
+			return false;
+		}
+
 		// Check the lines for the timeleft tag
 		for(int i = 1; i <= 4; ++i) {
 			String line = stateConfig.getString("line" + i);
